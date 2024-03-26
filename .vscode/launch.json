@@ -1,0 +1,27 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            //"type": "valadb",
+            //"request": "launch",
+            //"name": "ValaDB:Launch Program",
+            //"target": "bin/{pv1}",
+            //"gdbpath": "/usr/local/bin/gdb",
+            //"gdbargs": [
+            //    "--data-directory={Enter Gdb's data-directory}"
+            //],
+            //"showTraceCalls": true
+
+
+            "name": "ValaDB:Launch Program",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/pa1_v",
+//            "args": ["-arg1", "-arg2"],
+        }
+    ]
+}

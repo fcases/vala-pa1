@@ -1,0 +1,32 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+     // for the documentation about the tasks.json format
+
+     //  default build task for vala project
+
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Vala Compile",
+            "type": "shell",
+            "command": "/usr/bin/valac",
+            "args": [
+                "-g",
+                "src/*.vala",
+                "--pkg",
+                "gtk+-3.0",
+//                "--gresources=src/pv1.gresource.xml",
+                "-o",
+                "${workspaceFolder}/pa1_v"
+            ],
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
