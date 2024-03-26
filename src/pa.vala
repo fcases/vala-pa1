@@ -1,3 +1,17 @@
+using Gtk;
+
+namespace PA{
+    public class PA{
+        
+        public  int err=0;
+        
+        public PA(){
+
+        }
+    }
+}
+
+/*
 const std = @import("std");
 const assert = @import("std").debug.assert;
 
@@ -147,3 +161,4 @@ pub const PA = struct {
         return false;
     }
 };
+*/

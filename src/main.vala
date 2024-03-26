@@ -1,16 +1,12 @@
-using nsGTK;
-using nsPA;
+using GTK;
+using PA;
 
-pub fn main() anyerror!void {
-    const myPA = pa.Init();
-    defer myPA.Terminate();
+void main (string[] args) {
+    PA.PA myPA = new PA.PA();
     if (myPA.err != 0) return;
 
-    var myGtk = gtk.Init(myPA);
-    if (myGtk.err != null) return;
-    myGtk.RunMain();
-}
+    GTK.GTK myGTK=new GTK.GTK(args,myPA);
+    if (myGTK.err != 0) return;
 
-void main () {
-    print ("hello, world\n");
+    myGTK.RunMain();
 }

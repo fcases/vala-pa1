@@ -1,5 +1,7 @@
+/* 
 // https://github.com/shimamura-sakura/zig-fft/blob/main/fft.zig
 // with MIT License
+
 
 const std = @import("std");
 const PI = std.math.pi;
@@ -70,3 +72,4 @@ test "main" {
     std.debug.print("real: {d:7.3}\n", .{real});
     std.debug.print("imag: {d:7.3}\n", .{imag});
 }
+*/

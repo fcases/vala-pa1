@@ -20,7 +20,7 @@
             "name": "ValaDB:Launch Program",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/pa1_v",
+            "program": "${workspaceFolder}/out/bin/pa1_v",
 //            "args": ["-arg1", "-arg2"],
         }
     ]

@@ -17,7 +17,7 @@
                 "gtk+-3.0",
 //                "--gresources=src/pv1.gresource.xml",
                 "-o",
-                "${workspaceFolder}/pa1_v"
+                "${workspaceFolder}/out/bin/pa1_v"
             ],
             "problemMatcher": [],
             "options": {

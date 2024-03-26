@@ -3,7 +3,63 @@ using Cairo;
 
 using PA;
 
+namespace GTK{
 
+    public class GTK {
+        public int err=0;
+        PA.PA thePA;
+        Cairo.Pattern pat;
+
+        Dialog window;
+        Button butQuit;
+
+        public GTK(string[] args,PA.PA *aPA){
+            Gtk.init(ref args);
+
+            string? str=embedFile("./src/pa1.glade");
+            Builder builder=new Builder();
+            try {
+                builder.add_from_string(str,str.length);
+            } catch (GLib.Error ex) {
+                err=1;
+                print(ex.message);
+            } 
+
+            pat = new Cairo.Pattern.linear(0.0, 0.0, 0.0, 1.0);
+            pat.add_color_stop_rgb(0.2, 1, 0, 0);
+            pat.add_color_stop_rgb( 0.35, 1, 1, 0);
+            pat.add_color_stop_rgb( 0.65, 0, 1, 0);    
+
+            window = (Dialog) builder.get_object("miWindow");
+            butQuit = (Button) builder.get_object("miQuit");
+
+            thePA=aPA;
+        }
+
+        public void RunMain() {
+            window.destroy.connect (Gtk.main_quit);
+            butQuit.clicked.connect(Gtk.main_quit);
+
+            Gtk.main();
+            return;
+        }
+
+        void UpdatingThread() {
+        }
+
+        string? embedFile(string file){
+            FileStream stream = FileStream.open(file, "r");
+            string? line = null;
+            string? str="";
+            while ((line = stream.read_line ()) != null) {
+                str=str+line;
+            }
+            return str;
+        }
+
+    }
+}
+/* 
 var TheGTK = GTK{};
 
 pub const GTK = struct {
@@ -373,3 +429,4 @@ pub const GTK = struct {
         } else return false;
     }
 };
+*/
