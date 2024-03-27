@@ -1,121 +1,167 @@
 using Gtk;
+using PortAudio;
+using KissFFT;
+//  [CCode (cheader_filename = "string.h")]
+//  extern void* memcpy (void* dest, void* src, size_t n);
 
-namespace PA{
-    public class PA{
-        
-        public  int err=0;
-        
-        public PA(){
+void device_info_free(DeviceInfo di_ref){
+//    free(di_ref);
+}
 
+void stream_parameters_free(Stream.Parameters sp_ref) {
+    //free(sp_ref);
+}
+
+
+namespace myPA {
+    //////////////////////////////////////
+    //  class SyncObj
+    //////////////////////////////////////
+    class SyncObj {
+        Mutex theMutex;
+    
+        public bool Block()  {
+            return theMutex.trylock();
         }
+    
+        public void Unblock() {
+            theMutex.unlock();
+        }
+    
+        public void Reset() {
+            if (theMutex.trylock()) theMutex.unlock();
+        }
+    }
+    
+    //////////////////////////////////////
+    //  class myIfcPA
+    //////////////////////////////////////
+    public class myIfcPA{ 
+        const ulong SAMPLES = 1024;
+        const ulong FRAMERATE = 44100;
+
+        public PortAudio.Error err= ErrorCode.NO_ERROR;
+        SyncObj theSync=new SyncObj();
+        DeviceIndex numDevices;
+        List<DeviceInfo> deviceInfoList = new List<DeviceInfo>();
+        Stream.Parameters inSP;
+        Stream.Parameters outSP;
+        Stream miStream;
+        public float[] RawAudio=new float[SAMPLES];
+        public float[] ModAudio=new float[SAMPLES];
+
+        Cfg miCfg;
+        Cpx [] misDatosIn =new Cpx[SAMPLES];
+        Cpx [] misDatosOut =new Cpx[SAMPLES];
+    
+        public myIfcPA() {
+            err =initialize();
+            if( err == ErrorCode.NO_ERROR) FillInfo();
+        }
+
+        void FillInfo() {
+            numDevices = get_device_count();
+    
+            for(int i = 0; i < numDevices; i++) {
+                var aux = new DeviceInfo(i);
+                stdout.printf("Info for Device %d: %s - %d - %d\n", i, aux.name, aux.max_input_channels, aux.max_output_channels ) ;
+                deviceInfoList.append((owned)aux);
+            }
+    
+            inSP.channel_count = 1;
+            inSP.sample_format = FLOAT_32;
+            inSP.suggested_latency = 0.0;
+            outSP.channel_count = 1;
+            outSP.sample_format = FLOAT_32;
+            outSP.suggested_latency = 0.0;
+
+            miCfg=alloc((int)SAMPLES,false,null,null);
+        }
+    
+        void Terminate() {
+            terminate();
+            if( err != ErrorCode.NO_ERROR ) {
+                stdout.printf("Error %d! %s\n", err, get_error_text(err) );
+            }
+            deviceInfoList.foreach ((entry) => {
+                deviceInfoList.remove(entry);
+            });
+        }
+        
+        public void Start() {
+            theSync.Reset();
+            Stream.open(out miStream,inSP, outSP, FRAMERATE, SAMPLES, Stream.NO_FLAG, FuzzCallback);
+            miStream.start();
+        }
+    
+        public void Stop() {
+            miStream.stop();
+            miStream.close();
+            theSync.Reset();
+        }
+    
+        public bool CheckCompatibility(DeviceIndex x, DeviceIndex y) {
+            inSP.device = x;
+            outSP.device = y;
+            var devI=new DeviceInfo(x);
+            inSP.suggested_latency = devI.default_low_input_latency;
+            var devO=new DeviceInfo(y);
+            outSP.suggested_latency = devO.default_low_input_latency;
+            if(is_format_supported(inSP, outSP, FRAMERATE) != ErrorCode.NO_ERROR)
+                return false;
+            else
+                return true;
+        }    
+
+        public unowned List<DeviceInfo> GetDevices()  {
+            return deviceInfoList;
+        }
+    
+        public bool GetInputdata(float[] dataRaw, float[] dataMod) {
+            if( theSync.Block() ) {
+                Memory.copy(dataRaw,RawAudio,SAMPLES*sizeof(float));
+                Memory.copy(dataMod,ModAudio,SAMPLES*sizeof(float));
+                theSync.Unblock();
+                return true;
+            }
+    
+            return false;
+        }
+
+        int FuzzCallback(void* inputBuffer, void* outputBuffer,ulong frame_count,Stream.CallbackTimeInfo time_info,Stream.CallbackFlags status_flags) {
+            var ptrIn= (float*) inputBuffer;
+            var ptrOut=(float*) outputBuffer;
+            var Amp=1.25f;
+            for(int i=0;i<SAMPLES;i++) {
+                misDatosIn[i].r= ptrOut[i] = ptrIn[i]*Amp;
+                misDatosIn[i].i=0.0f;
+            }
+            transform(miCfg,misDatosIn,misDatosOut);
+  
+            var K2=0.25f;
+            float[] aux=new float[SAMPLES];
+            for(int i=0;i<SAMPLES;i++) {
+                aux[i]=misDatosOut[i].r*misDatosOut[i].r+misDatosOut[i].i*misDatosOut[i].i;
+                aux[i]=(float)Math.sqrt(aux[i])*K2;
+            }
+            
+            if(  theSync.Block() ) {
+                //  Memory.copy(RawAudio,ptrIn,1024*sizeof(float));
+                Memory.copy(RawAudio,ptrOut,1024*sizeof(float));
+                Memory.copy(ModAudio,aux,1024*sizeof(float));
+                theSync.Unblock();
+            }
+    
+            return 0;
+        }
+    
     }
 }
 
 /*
-const std = @import("std");
-const assert = @import("std").debug.assert;
-
 const fft = @import("fft.zig");
 
-const stdout = @import("std").io.getStdOut().writer();
-const c = @cImport({
-    @cInclude("portaudio.h");
-});
-
-pub const DIList = std.MultiArrayList(c.PaDeviceInfo);
-const SyncObj = struct {
-    theMutex: std.Thread.Mutex = std.Thread.Mutex{},
-
-    fn Block(self: *SyncObj) bool {
-        return self.theMutex.tryLock();
-    }
-
-    fn Unblock(self: *SyncObj) void {
-        self.theMutex.unlock();
-    }
-
-    fn Reset(self: *SyncObj) void {
-        if (self.theMutex.tryLock()) self.theMutex.unlock();
-    }
-};
-
-const SAMPLES: c_ulong = 1024;
-const FRAMERATE = 44_100.0;
-//const FRAMERATE = 32_000;
-var ThePA = PA{};
-
 pub const PA = struct {
-    err: c.PaError = c.paNoError,
-    numDevices: c.PaDeviceIndex = undefined,
-    gpa: std.heap.GeneralPurposeAllocator(.{}) = std.heap.GeneralPurposeAllocator(.{}){},
-    deviceInfoList: DIList = DIList{},
-    inSP: c.PaStreamParameters = c.PaStreamParameters{},
-    outSP: c.PaStreamParameters = c.PaStreamParameters{},
-    miStream: ?*c.PaStream = null,
-    RawAudio: [SAMPLES]f32 = .{0.0} ** SAMPLES,
-    ModAudio: [SAMPLES]f32 = .{0.0} ** SAMPLES,
-    theSync: SyncObj = SyncObj{},
-
-    pub fn Init() *PA {
-        ThePA.err = c.Pa_Initialize();
-        if (ThePA.err == c.paNoError) ThePA.FillInfo();
-
-        return &ThePA;
-    }
-
-    pub fn FillInfo(self: *PA) void {
-        self.numDevices = c.Pa_GetDeviceCount();
-
-        const b: u32 = @bitCast(self.numDevices);
-        for (0..b) |ind| {
-            const aux = @constCast(c.Pa_GetDeviceInfo(@intCast(ind)));
-            self.deviceInfoList.append(self.gpa.allocator(), aux.*) catch return;
-
-            stdout.print("Info for Device {d}: {s} - {d} - {d}\n", .{ ind, aux.*.name, aux.*.maxInputChannels, aux.*.maxOutputChannels }) catch return;
-        }
-
-        self.inSP.channelCount = 1;
-        self.inSP.sampleFormat = c.paFloat32;
-        self.inSP.suggestedLatency = 0.0;
-        self.outSP.channelCount = 1;
-        self.outSP.sampleFormat = c.paFloat32;
-        self.outSP.suggestedLatency = 0.0;
-    }
-
-    pub fn Terminate(self: *PA) void {
-        _ = c.Pa_Terminate();
-        if (self.err != c.paNoError) {
-            stdout.print("Error {d}! {s}\n", .{ self.err, c.Pa_GetErrorText(self.err) }) catch return;
-        }
-        self.deviceInfoList.deinit(self.gpa.allocator());
-    }
-
-    pub fn GetDevices(self: *PA) *DIList {
-        return &self.deviceInfoList;
-    }
-
-    pub fn CheckCompatibility(self: *PA, x: c.PaDeviceIndex, y: c.PaDeviceIndex) bool {
-        self.inSP.device = x;
-        self.outSP.device = y;
-        self.inSP.suggestedLatency = c.Pa_GetDeviceInfo(x).*.defaultLowInputLatency;
-        self.outSP.suggestedLatency = c.Pa_GetDeviceInfo(y).*.defaultLowInputLatency;
-        if (c.Pa_IsFormatSupported(&self.inSP, &self.outSP, 44_100.0) != c.paNoError)
-            return false
-        else
-            return true;
-    }
-
-    pub fn Start(self: *PA) void {
-        // self.theSync.Reset();
-        _ = c.Pa_OpenStream(@alignCast(&self.miStream), &self.inSP, &self.outSP, FRAMERATE, SAMPLES, c.paNoFlag, &c_FuzzCallback, self);
-        _ = c.Pa_StartStream(self.miStream);
-    }
-
-    pub fn Stop(self: *PA) void {
-        _ = c.Pa_StopStream(self.miStream);
-        _ = c.Pa_CloseStream(self.miStream);
-        // self.theSync.Reset();
-    }
 
     fn c_FuzzCallback(inputBuffer: ?*const anyopaque, outputBuffer: ?*anyopaque, _: c_ulong, _: [*c]const c.PaStreamCallbackTimeInfo, _: c.PaStreamCallbackFlags, ptr: ?*anyopaque) callconv(.C) c_int {
         const ptrIn: *[SAMPLES]f32 = @constCast(@ptrCast(@alignCast(inputBuffer)));
@@ -150,15 +196,5 @@ pub const PA = struct {
         return 0;
     }
 
-    pub fn GetInputdata(self: *PA, dataRaw: *[SAMPLES]f32, dataMod: *[SAMPLES]f32) bool {
-        if (self.theSync.Block()) {
-            @memcpy(dataRaw, &self.RawAudio);
-            @memcpy(dataMod, &self.ModAudio);
-            self.theSync.Unblock();
-            return true;
-        }
-
-        return false;
-    }
 };
 */

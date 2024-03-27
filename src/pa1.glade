@@ -61,8 +61,8 @@
           </packing>
         </child>
         <child>
-          <object class="GtkDrawingArea" id="miLienzoFall">
-            <property name="name">fall</property>
+          <object class="GtkDrawingArea" id="miLienzoRaw">
+            <property name="name">raw</property>
             <property name="width-request">400</property>
             <property name="height-request">210</property>
             <property name="visible">True</property>

@@ -9,13 +9,26 @@
         {
             "label": "Vala Compile",
             "type": "shell",
-            "command": "/usr/bin/valac",
+            // "command": "./compile.sh",
+            // "args": [""],
+            "command": "valac",
             "args": [
                 "-g",
                 "src/*.vala",
+                // "src/*.gs",
+                "--vapidir",
+//  https://gitlab.gnome.org/GNOME/vala-extra-vapis/-/blob/master/portaudio.vapi?ref_type=heads
+                "vapi",  // poner en este dir.  los fich. vapi. Extras vapis en direccion de linea anterior
                 "--pkg",
                 "gtk+-3.0",
-//                "--gresources=src/pv1.gresource.xml",
+                "--pkg",
+                "glib-2.0", 
+                "--pkg",
+                "portaudio-2.0", 
+                "--pkg",
+                "kissfft-float", 
+                "-X",
+                "-lm", // -X -lm por incluir Math.cos y sin
                 "-o",
                 "${workspaceFolder}/out/bin/pa1_v"
             ],

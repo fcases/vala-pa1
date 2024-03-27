@@ -1,12 +1,12 @@
-using GTK;
-using PA;
+using myGTK;
+using myPA;
 
 void main (string[] args) {
-    PA.PA myPA = new PA.PA();
-    if (myPA.err != 0) return;
+    var pa = new myPA.myIfcPA();
+    if (pa.err != 0) return;
 
-    GTK.GTK myGTK=new GTK.GTK(args,myPA);
-    if (myGTK.err != 0) return;
+    var myApp=new myGTK.myAppGTK(pa);
+    if (myApp.err != 0) return;
 
-    myGTK.RunMain();
+    myApp.run(args);
 }
