@@ -1,5 +1,5 @@
 # zig-pa1
-An exercise with ZIG and the gtk and portaudio C libraries.
+The same project as zig-pa1, but in Vala: An exercise with Vala and the gtk and portaudio C libraries.
 
 Just choose an input device in first combobox, output in second combobox. If both devices are compatible, the green led will turn on. Next step, you can push the play ... and wistle.
 
