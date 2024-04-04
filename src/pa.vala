@@ -131,24 +131,25 @@ namespace myPA {
         int FuzzCallback(void* inputBuffer, void* outputBuffer,ulong frame_count,Stream.CallbackTimeInfo time_info,Stream.CallbackFlags status_flags) {
             var ptrIn= (float*) inputBuffer;
             var ptrOut=(float*) outputBuffer;
-            var Amp=1.25f;
+            var Amp=2.2f;
             for(int i=0;i<SAMPLES;i++) {
-                misDatosIn[i].r= ptrOut[i] = ptrIn[i]*Amp;
+                misDatosIn[i].r=  ptrIn[i];
+                ptrOut[i] = ptrIn[i]*Amp;
                 misDatosIn[i].i=0.0f;
             }
             transform(miCfg,misDatosIn,misDatosOut);
   
             var K2=0.25f;
-            float[] aux=new float[SAMPLES];
+            float[] mod=new float[SAMPLES];
             for(int i=0;i<SAMPLES;i++) {
-                aux[i]=misDatosOut[i].r*misDatosOut[i].r+misDatosOut[i].i*misDatosOut[i].i;
-                aux[i]=(float)Math.sqrt(aux[i])*K2;
+                mod[i]=misDatosOut[i].r*misDatosOut[i].r+misDatosOut[i].i*misDatosOut[i].i;
+                mod[i]=(float)Math.sqrt(mod[i])*K2;
             }
             
             if(  theSync.Block() ) {
                 //  Memory.copy(RawAudio,ptrIn,1024*sizeof(float));
                 Memory.copy(RawAudio,ptrOut,1024*sizeof(float));
-                Memory.copy(ModAudio,aux,1024*sizeof(float));
+                Memory.copy(ModAudio,mod,1024*sizeof(float));
                 theSync.Unblock();
             }
     

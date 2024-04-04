@@ -88,8 +88,9 @@ namespace myGTK{
             bThreadRunning = true;
             
             while( !bEvKillThread ) {
-                Thread.usleep(70000);
-                if( miEvent.timedWait(10000000) ) continue;
+                //  Thread.usleep(70000);
+                //  if( miEvent.timedWait(10000000) ) continue;
+                if( miEvent.timedWait(10000) ) continue;
                 miEvent.reset();
                 if( thePA.GetInputdata( drawRaw.DrawingDataRaw, drawFFT.DrawingDataMod) ) {
                     drawFFT.queue_draw();
@@ -208,9 +209,12 @@ namespace myGTK{
     class myDAAudio: Object {
         public enum Kind {FFT,RAW}
 
-        const float DIVISIONES = 64f;
-        const float INC = 1f / DIVISIONES;
-        const float SEP_MIN = INC / 4f;
+        const float DIVISIONES_F = 64f;
+        const float INC_F = 1f / DIVISIONES_F;
+        const float SEP_MIN_F = INC_F / 4f;
+        const float DIVISIONES_R = 1024;
+        const float INC_R = 1f / DIVISIONES_R;
+        const float SEP_MIN_R = INC_R / 4f;
 
         DrawingArea da;
         Kind kind;
@@ -267,17 +271,17 @@ namespace myGTK{
             cr.set_source(pat);
     
             var i = 0f;
-            var ANCHO_MAX = INC - SEP_MIN;
-            float ANCHO;
-            if (ANCHO_MAX > 0.1) ANCHO=0.1f; else ANCHO=ANCHO_MAX;
+            var ANCHO_MAX_F = INC_F - SEP_MIN_F;
+            float ANCHO_F;
+            if (ANCHO_MAX_F > 0.1) ANCHO_F=0.1f; else ANCHO_F=ANCHO_MAX_F;
     
             uint pos = 0;
-            uint POS_INC = (uint)(1024 / 16 / DIVISIONES); // 22 Khz => 1024/2,    si 11KHz => 1024/4
+            uint POS_INC_F = (uint)(1024 / 16 / DIVISIONES_F); // 22 Khz => 1024/2,    si 11KHz => 1024/4
             while (i < 1) {
-                cr.rectangle( i, 1.0, ANCHO, -DrawingDataMod[pos]);
+                cr.rectangle( i, 1.0, ANCHO_F, -DrawingDataMod[pos]);
                 
-                pos += POS_INC;
-                i += INC;
+                pos += POS_INC_F;
+                i += INC_F;
             }
             cr.fill();
 
@@ -305,12 +309,12 @@ namespace myGTK{
     
             int pos = 0;
             while (i < 1) {
-                m = R + K*DrawingDataRaw[pos];
+                m = R + DrawingDataRaw[pos];
                 x = K * m * (float)Math.cos(fi);
                 y = -K * m * (float)Math.sin(fi);
                 cr.line_to(x, y);
 
-                pos ++; i += INC;
+                pos ++; i += INC_R;
                 fi = i * 2f * (float)Math.PI;
             }
 
@@ -400,52 +404,77 @@ namespace myGTK{
     //  class ResetEvent
     //////////////////////////////////////
     public class ResetEvent {
-        private Mutex mutex;
-        private Cond cond;
-        private bool signaled = false;
+        private uchar aux='a';
+        private AsyncQueue<uchar*> miQueue;
     
         public ResetEvent() {
+            miQueue=new AsyncQueue<uchar*>();
         }
     
         public void set() {
-            mutex.lock();
-            signaled = true;
-            cond.signal();
-            mutex.unlock();
+            miQueue.push(&aux);
         }
     
         public void reset() {
-            mutex.lock();
-            signaled = false;
-            mutex.unlock();
+            while( miQueue.length()>0 ) miQueue.pop();
         }
     
         public void wait() {
-            mutex.lock();
-            while (!signaled) {
-                cond.wait(mutex);
-            }
-            mutex.unlock();
+            miQueue.pop();
         }
 
         public bool timedWait(int milliseconds) {
-            bool timeout_ended=false;
-
-            mutex.lock();
-            if (!signaled) {
-                var timeout = Timeout.add(milliseconds, () => {
-                    timeout_ended=true;
-                    cond.signal();
-                    return false; // Para que el temporizador se detenga después de la primera ejecución
-                });
-    
-                while (!signaled) {
-                    cond.wait(mutex);
-                }
-            }
-            mutex.unlock();
-            return timeout_ended;
+            return miQueue.timeout_pop(milliseconds)==null?true:false;
         }
     }
 }
+//      public class ResetEvent {
+//          private Mutex mutex;
+//          private Cond cond;
+//          private bool signaled = false;
+    
+//          public ResetEvent() {
+//          }
+    
+//          public void set() {
+//              mutex.lock();
+//              signaled = true;
+//              cond.signal();
+//              mutex.unlock();
+//          }
+    
+//          public void reset() {
+//              mutex.lock();
+//              signaled = false;
+//              mutex.unlock();
+//          }
+    
+//          public void wait() {
+//              mutex.lock();
+//              while (!signaled) {
+//                  cond.wait(mutex);
+//              }
+//              mutex.unlock();
+//          }
+
+//          public bool timedWait(int milliseconds) {
+//              bool timeout_ended=false;
+
+//              mutex.lock();
+//              if (!signaled) {
+//                  var timeout = Timeout.add(milliseconds, () => {
+//                      timeout_ended=true;
+//                      cond.signal();
+//                      return false; // Para que el temporizador se detenga después de la primera ejecución
+//                  });
+    
+//                  while (!signaled) {
+//                      cond.wait(mutex);
+//                  }
+//              }
+//              mutex.unlock();
+//              return timeout_ended;
+//          }
+//      }
+//  }
 
