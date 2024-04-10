@@ -9,6 +9,7 @@ dependencies = [
     dependency('gobject-2.0'),
     dependency('gtk+-3.0'),
     dependency('portaudio-2.0'),
+    dependency('kissfft-float'),
 ]
 
 sources = files('src/main.vala','src/gtk.vala','src/pa.vala')
