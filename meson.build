@@ -11,7 +11,7 @@ dependencies = [
     dependency('portaudio-2.0'),
 ]
 
-sources = files('src/main.vala','src/gtk.vala','src/pa.vala','src/fft.vala')
+sources = files('src/main.vala','src/gtk.vala','src/pa.vala')
 
 executable('pa1_v', sources, dependencies: dependencies)
 
