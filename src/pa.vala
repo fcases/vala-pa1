@@ -113,7 +113,7 @@ namespace myPA {
             double seconds;
 
             seconds = t1.elapsed (out microseconds);
-            print ("PA: Total segundos: %s\n", seconds.to_string ());
+            print ("\nPA: Total segundos: %s\n", seconds.to_string ());
             print ("PA: milisec por vez: %f\n", seconds*1000/many);
             print ("PA: %5.0f veces, %f veces/s \n", many, many/seconds);
             print ("PA: cb total time en ms  %f, usec por vez %f\n\n",time*1000,time*1000000/many);
@@ -143,9 +143,10 @@ namespace myPA {
                 Memory.copy(dataRaw,RawAudio,SAMPLES*sizeof(float));
                 Memory.copy(dataMod,ModAudio,SAMPLES*sizeof(float));
                 theSync.Unblock();
+                print ("^");
                 return true;
-            }
-    
+            } else print("~");
+
             return false;
         }
 
@@ -174,7 +175,8 @@ namespace myPA {
                 Memory.copy(RawAudio,ptrOut,1024*sizeof(float));
                 Memory.copy(ModAudio,mod,1024*sizeof(float));
                 theSync.Unblock();
-            }
+                print (".");
+            } else print (":");
     
             t2.stop();
             time+=t2.elapsed(out microseconds);
