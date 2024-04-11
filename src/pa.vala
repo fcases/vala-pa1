@@ -169,7 +169,7 @@ namespace myPA {
                 mod[i]=(float)Math.sqrt(mod[i])*K2;
             }
             
-            if(  theSync.Block() ) {
+            if( theSync.Block() ) {
                 //  Memory.copy(RawAudio,ptrIn,1024*sizeof(float));
                 Memory.copy(RawAudio,ptrOut,1024*sizeof(float));
                 Memory.copy(ModAudio,mod,1024*sizeof(float));
