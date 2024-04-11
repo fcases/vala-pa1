@@ -53,10 +53,18 @@ namespace myPA {
         Cfg miCfg;
         Cpx [] misDatosIn =new Cpx[SAMPLES];
         Cpx [] misDatosOut =new Cpx[SAMPLES];
-    
+
+        static uint many=0;
+        double time=0;
+        Timer t1;
+        static Timer t2=new Timer();
+        ulong microseconds;
+        
         public myIfcPA() {
             err =initialize();
             if( err == ErrorCode.NO_ERROR) FillInfo();
+
+            t1=new Timer();
         }
 
         void FillInfo() {
@@ -92,12 +100,25 @@ namespace myPA {
             theSync.Reset();
             Stream.open(out miStream,inSP, outSP, FRAMERATE, SAMPLES, Stream.NO_FLAG, FuzzCallback);
             miStream.start();
+
+            t1.start();
         }
     
         public void Stop() {
             miStream.stop();
             miStream.close();
             theSync.Reset();
+
+            t1.stop();
+            double seconds;
+
+            seconds = t1.elapsed (out microseconds);
+            print ("PA: Total segundos: %s\n", seconds.to_string ());
+            print ("PA: milisec por vez: %f\n", seconds*1000/many);
+            print ("PA: %5.0f veces, %f veces/s \n", many, many/seconds);
+            print ("PA: cb total time en ms  %f, usec por vez %f\n\n",time*1000,time*1000000/many);
+            many=0;
+            time=0;
         }
     
         public bool CheckCompatibility(DeviceIndex x, DeviceIndex y) {
@@ -129,6 +150,8 @@ namespace myPA {
         }
 
         int FuzzCallback(void* inputBuffer, void* outputBuffer,ulong frame_count,Stream.CallbackTimeInfo time_info,Stream.CallbackFlags status_flags) {
+            t2.start();
+
             var ptrIn= (float*) inputBuffer;
             var ptrOut=(float*) outputBuffer;
             var Amp=2.2f;
@@ -153,6 +176,9 @@ namespace myPA {
                 theSync.Unblock();
             }
     
+            t2.stop();
+            time+=t2.elapsed(out microseconds);
+            many++;
             return 0;
         }
     

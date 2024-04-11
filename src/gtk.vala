@@ -34,6 +34,12 @@ namespace myGTK{
         public myCBTDecvices cbtIn;
         public myCBTDecvices cbtOut;
 
+        public static  uint many=0;
+        public double time=0;
+        Timer t1;
+        public static Timer t2=new Timer();
+        ulong microseconds;
+
         
         public myAppGTK(myIfcPA *pa_ptr) {
             Object (application_id: "es.k6site.exampleGtkApp");
@@ -80,6 +86,8 @@ namespace myGTK{
             butPlay.set_sensitive(false);
             add_window(window);
 
+            t1=new Timer();
+
             return;
         }
 
@@ -88,8 +96,6 @@ namespace myGTK{
             bThreadRunning = true;
             
             while( !bEvKillThread ) {
-                //  Thread.usleep(70000);
-                //  if( miEvent.timedWait(10000000) ) continue;
                 if( miEvent.timedWait(10000) ) continue;
                 miEvent.reset();
                 if( thePA.GetInputdata( drawRaw.DrawingDataRaw, drawFFT.DrawingDataMod) ) {
@@ -123,6 +129,8 @@ namespace myGTK{
                 butPlay.set_sensitive(false);
                 cbtIn.set_sensitive(false);
                 cbtOut.set_sensitive(false);
+
+                t1.start();
             }
         }
     
@@ -134,6 +142,18 @@ namespace myGTK{
                 miEvent.reset();
                 cbtIn.set_sensitive(true);
                 cbtOut.set_sensitive(true);
+
+                t1.stop();
+                double seconds;
+    
+                seconds = t1.elapsed (out microseconds);
+                print ("gtk: Total segundos: %s\n", seconds.to_string ());
+                print ("gtk: milisec por vez: %f\n", seconds*1000/many);
+                print ("gtk: %5.0f veces, %f veces/s \n", many, many/seconds);
+                print ("gtk: cb total time en ms  %f, usec por vez %f\n",time*1000,time*1000000/many);
+                print ("gtk: ===========\n\n");
+                many=0;
+                time=0;    
             }
     
             if( myCBTDecvices.GetReadyToPlay() ) {
@@ -260,6 +280,9 @@ namespace myGTK{
         }
 
         bool DrawFFT(Widget w, Context cr) {
+            var app=myAppGTK.GetApp();
+            app.t2.start();
+
             float width =w.get_allocated_width();
             float height=w.get_allocated_height();
 
@@ -285,10 +308,16 @@ namespace myGTK{
             }
             cr.fill();
 
+            app.t2.stop(); double microseconds;
+            app.time+=app.t2.elapsed(out microseconds);
+
             return false;
         }    
 
         bool DrawRaw(Widget w, Context cr) {
+            var app=myAppGTK.GetApp();
+            app.t2.start();
+
             float width =w.get_allocated_width();
             float height=w.get_allocated_height();
     
@@ -321,9 +350,13 @@ namespace myGTK{
             cr.line_to( K * (0.15 + DrawingDataRaw[0]), 0.0);
             cr.stroke();
 
-            var app=myAppGTK.GetApp();
+            //  var app=myAppGTK.GetApp();
             app.miEvent.set();
     
+            app.many++;
+            app.t2.stop(); double microseconds;
+            app.time+=app.t2.elapsed(out microseconds);
+
             return false;
         }
     }
